@@ -23,9 +23,10 @@ def do_clean(number=0):
         for archive in archives_to_delete:
             local("rm {}".format(archive))
     # Remote cleanup
-    with cd("/data/web_static/releases"):
-        releases = run("ls -tr").split()
-        releases_to_delete = [r for r in releases if "web_static_" in r]
-        releases_to_delete = releases_to_delete[:-number]
-        for release in releases_to_delete:
-            run("rm -rf {}".format(release))
+    for server in env.hosts:
+        with cd("/data/web_static/releases"):
+            releases = run("ls -tr").split()
+            releases_to_delete = [r for r in releases if "web_static_" in r]
+            releases_to_delete = releases_to_delete[:-number]
+            for release in releases_to_delete:
+                run("rm -rf {}".format(release))
