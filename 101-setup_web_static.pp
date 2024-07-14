@@ -1,117 +1,88 @@
-# Update package lists and install Nginx if it's not already installed
-package { 'nginx':
-  ensure => installed,
-  require => Exec['apt_update'],
-}
+# Configures a web server for deployment of web_static.
 
-exec { 'apt_update':
-  command => '/usr/bin/apt-get update',
-  path    => '/usr/bin',
-}
-
-# Create the necessary directories if they don't already exist
-file { '/data':
-  ensure => directory,
-  owner  => 'ubuntu',
-  group  => 'ubuntu',
-  mode   => '0755',
-}
-
-file { '/data/web_static':
-  ensure => directory,
-  owner  => 'ubuntu',
-  group  => 'ubuntu',
-  mode   => '0755',
-  require => File['/data'],
-}
-
-file { '/data/web_static/releases':
-  ensure => directory,
-  owner  => 'ubuntu',
-  group  => 'ubuntu',
-  mode   => '0755',
-  require => File['/data/web_static'],
-}
-
-file { '/data/web_static/releases/test':
-  ensure => directory,
-  owner  => 'ubuntu',
-  group  => 'ubuntu',
-  mode   => '0755',
-  require => File['/data/web_static/releases'],
-}
-
-file { '/data/web_static/shared':
-  ensure => directory,
-  owner  => 'ubuntu',
-  group  => 'ubuntu',
-  mode   => '0755',
-  require => File['/data/web_static'],
-}
-
-# Create a fake HTML file in index.html
-file { '/data/web_static/releases/test/index.html':
-  ensure  => file,
-  content => '<html>
-  <head>
-  </head>
-  <body>
-    Konyhea
-  </body>
-</html>',
-  owner   => 'ubuntu',
-  group   => 'ubuntu',
-  mode    => '0644',
-  require => File['/data/web_static/releases/test'],
-}
-
-# Create a symbolic link, if it already exists, it will be recreated
-file { '/data/web_static/current':
-  ensure => link,
-  target => '/data/web_static/releases/test',
-  owner  => 'ubuntu',
-  group  => 'ubuntu',
-  require => File['/data/web_static/releases/test'],
-}
-
-# Update Nginx configuration to serve the content of /data/web_static/current/ to hbnb_static
-file { '/etc/nginx/sites-available/default':
-  ensure  => file,
-  owner   => 'root',
-  group   => 'root',
-  mode    => '0644',
-  content => template('nginx/default.erb'),
-  require => Package['nginx'],
-  notify  => Service['nginx'],
-}
-
-# Restart Nginx
-service { 'nginx':
-  ensure    => running,
-  enable    => true,
-  subscribe => File['/etc/nginx/sites-available/default'],
-}
-
-# Nginx configuration template
-file { '/etc/puppetlabs/code/environments/production/modules/nginx/templates/default.erb':
-  ensure  => file,
-  content => "
-server {
+# Nginx configuration file
+$nginx_conf = "server {
     listen 80 default_server;
     listen [::]:80 default_server;
-
-    root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
-
-    server_name _;
-
-    location / {
-        try_files \$uri \$uri/ =404;
+    add_header X-Served-By ${hostname};
+    root   /var/www/html;
+    index  index.html index.htm;
+    location /hbnb_static {
+        alias /data/web_static/current;
+        index index.html index.htm;
     }
-
-    location /hbnb_static/ {
-        alias /data/web_static/current/;
+    location /redirect_me {
+        return 301 https://th3-gr00t.tk;
     }
+    error_page 404 /404.html;
+    location /404 {
+      root /var/www/html;
+      internal;
+    }
+}"
+
+package { 'nginx':
+  ensure   => 'present',
+  provider => 'apt'
+} ->
+
+file { '/data':
+  ensure  => 'directory'
+} ->
+
+file { '/data/web_static':
+  ensure => 'directory'
+} ->
+
+file { '/data/web_static/releases':
+  ensure => 'directory'
+} ->
+
+file { '/data/web_static/releases/test':
+  ensure => 'directory'
+} ->
+
+file { '/data/web_static/shared':
+  ensure => 'directory'
+} ->
+
+file { '/data/web_static/releases/test/index.html':
+  ensure  => 'present',
+  content => "Holberton School Puppet\n"
+} ->
+
+file { '/data/web_static/current':
+  ensure => 'link',
+  target => '/data/web_static/releases/test'
+} ->
+
+exec { 'chown -R ubuntu:ubuntu /data/':
+  path => '/usr/bin/:/usr/local/bin/:/bin/'
 }
-",
+
+file { '/var/www':
+  ensure => 'directory'
+} ->
+
+file { '/var/www/html':
+  ensure => 'directory'
+} ->
+
+file { '/var/www/html/index.html':
+  ensure  => 'present',
+  content => "Holberton School Nginx\n"
+} ->
+
+file { '/var/www/html/404.html':
+  ensure  => 'present',
+  content => "Ceci n'est pas une page\n"
+} ->
+
+file { '/etc/nginx/sites-available/default':
+  ensure  => 'present',
+  content => $nginx_conf
+} ->
+
+exec { 'nginx restart':
+  path => '/etc/init.d/'
 }
