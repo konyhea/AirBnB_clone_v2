@@ -4,9 +4,8 @@ from fabric.api import local, env, run, put
 from datetime import datetime
 from os.path import exists
 
-env.hosts = ['54.209.68.125', '34.207.120.7']
-env.user = 'ubuntu'
-env.key_filename = '~/.ssh/id_rsa'
+env.hosts = ['54.160.114.105', '18.234.107.69']
+
 
 
 def do_pack():
@@ -27,8 +26,7 @@ def do_pack():
             return archive_name
         else:
             return None
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
         return None
 
 
@@ -63,7 +61,7 @@ def do_deploy(archive_path):
         run("ln -s /data/web_static/releases/{}/ /data/web_static/current".
             format(archive_folder))
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
