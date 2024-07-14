@@ -4,9 +4,7 @@ from fabric.api import env, local, run, lcd, cd
 from os import listdir
 from os.path import isfile, join
 
-env.hosts = ['54.209.68.125', '34.207.120.7']
-env.user = 'ubuntu'
-env.key_filename = '~/.ssh/id_rsa'
+env.hosts = ['18.234.107.69', '54.160.114.105']
 
 
 def do_clean(number=0):
@@ -19,7 +17,7 @@ def do_clean(number=0):
         number = 1
     # Local cleanup
     archives = sorted([f for f in listdir("versions")
-            if isfile(join("versions", f))])
+                       if isfile(join("versions", f))])
     archives_to_delete = archives[:-number]
     with lcd("versions"):
         for archive in archives_to_delete:
