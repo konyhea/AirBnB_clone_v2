@@ -7,7 +7,6 @@ from os.path import exists
 env.hosts = ['54.160.114.105', '18.234.107.69']
 
 
-
 def do_pack():
     """
     Generates a .tgz archive from the contents of the web_static folder.
